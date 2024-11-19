@@ -58,6 +58,7 @@ class _CultivationPageState extends State<CultivationPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         title: const Text('Listagem de Cultivos'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
@@ -114,8 +115,14 @@ class CultivationCard extends StatelessWidget {
               icon: const Icon(Icons.edit, color: Colors.blue),
               onPressed: () {
                 // Redireciona para a tela de edição
-                Navigator.pushNamed(context, '/editCultivation',
-                    arguments: cultivation);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CultivationFormPage(
+                      cultivation: cultivation, // Passe o objeto aqui
+                    ),
+                  ),
+                );
               },
             ),
             IconButton(

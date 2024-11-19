@@ -6,7 +6,9 @@ import 'package:tcc_app/viewmodel/home/cultivation_viewmodel.dart';
 import 'package:tcc_app/viewmodel/home/plant.viewmodel.dart';
 
 class CultivationFormPage extends StatefulWidget {
-  const CultivationFormPage({Key? key}) : super(key: key);
+  final Cultivation? cultivation;
+
+  const CultivationFormPage({Key? key, this.cultivation}) : super(key: key);
 
   @override
   _CultivationFormPage createState() => _CultivationFormPage();
@@ -18,6 +20,16 @@ class _CultivationFormPage extends State<CultivationFormPage> {
   final TextEditingController _nameController = TextEditingController();
   final plantViewModel = PlantViewModelImpl();
   Plant? _selectedPlant;
+
+  @override
+  void initState() {
+    super.initState();
+    // Preencher os campos se estiver editando
+    if (widget.cultivation != null) {
+      _nameController.text = widget.cultivation!.name;
+      _selectedPlant = widget.cultivation!.plant;
+    }
+  }
 
   void _navigateBackWithSuccess() {
     Navigator.pop(context, true);
@@ -52,6 +64,7 @@ class _CultivationFormPage extends State<CultivationFormPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
         title: const Text('Cultivation Form'),
       ),
       body: Padding(

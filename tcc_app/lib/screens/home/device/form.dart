@@ -5,7 +5,10 @@ import 'package:tcc_app/viewmodel/home/cultivation_viewmodel.dart';
 import 'package:tcc_app/viewmodel/home/device_viewmodel.dart';
 
 class DeviceFormPage extends StatefulWidget {
-  const DeviceFormPage({Key? key}) : super(key: key);
+  final Device?
+      device; // Recebe um dispositivo, que pode ser nulo para nova criação
+
+  const DeviceFormPage({Key? key, this.device}) : super(key: key);
 
   @override
   _DeviceFormPage createState() => _DeviceFormPage();
@@ -18,6 +21,16 @@ class _DeviceFormPage extends State<DeviceFormPage> {
   final cultivationViewModel = CultivationViewModelImpl();
   Cultivation? _selectedCultivation;
 
+  @override
+  void initState() {
+    super.initState();
+    if (widget.device != null) {
+      // Caso esteja editando, preenche o formulário com os dados do dispositivo
+      _serialNumberController.text = widget.device!.serialNumber;
+      _selectedCultivation = widget.device!.cultivation;
+    }
+  }
+
   void _navigateBackWithSuccess() {
     Navigator.pop(context, true);
   }
@@ -28,23 +41,28 @@ class _DeviceFormPage extends State<DeviceFormPage> {
   }
 
   void handleSubmit() async {
-    try {
-      if (!_formKey.currentState!.validate()) {
-        print('Formulário inválido');
-        return;
-      }
+    if (!_formKey.currentState!.validate()) {
+      print('Formulário inválido');
+      return;
+    }
 
+    try {
       Device data = Device(
           serialNumber: _serialNumberController.text,
           cultivation: _selectedCultivation!);
 
-      await deviceViewModel.createDevice(data);
-
-      _showSnackBar("Device cadastrado com sucesso!!");
+      if (widget.device == null) {
+        // Criação de novo dispositivo
+        await deviceViewModel.createDevice(data);
+        _showSnackBar("Device cadastrado com sucesso!!");
+      } else {
+        // Edição de dispositivo existente
+        await deviceViewModel.updateDevice(widget.device!);
+        _showSnackBar("Device editado com sucesso!!");
+      }
       _navigateBackWithSuccess();
     } catch (e) {
-      final error = e;
-      _showSnackBar("Erro ao cadastrar Device");
+      _showSnackBar("Erro ao cadastrar ou editar Device");
     }
   }
 
@@ -52,7 +70,7 @@ class _DeviceFormPage extends State<DeviceFormPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Device Form'),
+        title: Text(widget.device == null ? 'Device Form' : 'Edit Device'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -60,49 +78,47 @@ class _DeviceFormPage extends State<DeviceFormPage> {
           key: _formKey,
           child: Column(
             children: [
-              // Nome input
+              // Serial number input
               TextFormField(
                 controller: _serialNumberController,
                 decoration: const InputDecoration(labelText: 'Serial Number'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter a name';
+                    return 'Please enter a serial number';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
 
-              // Select de planta
+              // Select cultivation
               FutureBuilder<List<Cultivation>>(
-                future: cultivationViewModel
-                    .listCultivations(), // Método que retorna a lista de plantas
+                future: cultivationViewModel.listCultivations(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const CircularProgressIndicator();
                   } else if (snapshot.hasError) {
-                    return const Text('Error loading plants');
+                    return const Text('Error loading cultivations');
                   } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Text('No plants available');
+                    return const Text('No cultivations available');
                   }
 
-                  final plants = snapshot.data!;
+                  final cultivations = snapshot.data!;
 
-                  // Garante que o valor inicial de _selectedPlant é válido
+                  // Initialize _selectedCultivation if it's null or invalid
                   if (_selectedCultivation == null ||
-                      !plants.contains(_selectedCultivation)) {
-                    _selectedCultivation =
-                        plants.first; // Inicializa com o primeiro item da lista
+                      !cultivations.contains(_selectedCultivation)) {
+                    _selectedCultivation = cultivations.first;
                   }
 
                   return DropdownButtonFormField<Cultivation>(
                     value: _selectedCultivation,
                     decoration:
-                        const InputDecoration(labelText: 'Selecione o Cultivo'),
-                    items: plants.map((plant) {
+                        const InputDecoration(labelText: 'Select Cultivation'),
+                    items: cultivations.map((cultivation) {
                       return DropdownMenuItem<Cultivation>(
-                        value: plant, // O valor é o objeto Plant
-                        child: Text(plant.name), // Exibe o nome da planta
+                        value: cultivation,
+                        child: Text(cultivation.name),
                       );
                     }).toList(),
                     onChanged: (value) {
@@ -112,7 +128,7 @@ class _DeviceFormPage extends State<DeviceFormPage> {
                     },
                     validator: (value) {
                       if (value == null) {
-                        return 'Please select a plant';
+                        return 'Please select a cultivation';
                       }
                       return null;
                     },
@@ -122,10 +138,10 @@ class _DeviceFormPage extends State<DeviceFormPage> {
 
               const SizedBox(height: 32),
 
-              // Botão de envio
+              // Submit button
               ElevatedButton(
                 onPressed: handleSubmit,
-                child: const Text('Submit'),
+                child: Text(widget.device == null ? 'Submit' : 'Update'),
               ),
             ],
           ),

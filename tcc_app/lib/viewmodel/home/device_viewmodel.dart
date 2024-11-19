@@ -17,4 +17,10 @@ class DeviceViewModelImpl {
 
     return response;
   }
+
+  Future<Device?> updateDevice(Device data) async {
+    final response = await deviceRepository.createDevice(data);
+
+    return response;
+  }
 }

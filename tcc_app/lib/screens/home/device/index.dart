@@ -51,7 +51,8 @@ class _DevicePageState extends State<DevicePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Listagem de Devices'),
+        centerTitle: true,
+        title: const Text('Listagem de Dispositivos'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
@@ -116,8 +117,14 @@ class DeviceCard extends StatelessWidget {
                   icon: const Icon(Icons.edit, color: Colors.blue),
                   onPressed: () {
                     // Redireciona para a tela de edição do device
-                    Navigator.pushNamed(context, '/editDevice',
-                        arguments: device);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => DeviceFormPage(
+                          device: device, // Passe o objeto aqui
+                        ),
+                      ),
+                    );
                   },
                 ),
                 IconButton(

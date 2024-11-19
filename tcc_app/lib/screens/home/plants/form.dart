@@ -3,7 +3,7 @@ import 'package:tcc_app/models/plant.dart';
 import 'package:tcc_app/viewmodel/home/plant.viewmodel.dart';
 
 class PlantFormPage extends StatefulWidget {
-  final Plant? plant; // Objeto opcional para edição
+  final Plant? plant;
 
   const PlantFormPage({Key? key, this.plant}) : super(key: key);
 
@@ -52,12 +52,29 @@ class _PlantFormPageState extends State<PlantFormPage> {
     Navigator.pop(context, true);
   }
 
-  void handleSubmit() async {
-    if (!_formKey.currentState!.validate()) {
-      return _showSnackBar("Formulário Inválido");
+  void handleUpdate(Plant plant) async {
+    try {
+      await plantViewModel.updatePlant(plant.id!, plant);
+      _showSnackBar("Planta atualizada com sucesso");
+      _navigateBackWithSuccess();
+    } catch (e) {
+      _showSnackBar('Erro ao atualizar planta!');
     }
+  }
 
-    final updatedPlant = Plant(
+  void handleCreate(Plant data) async {
+    try {
+      await plantViewModel.createPlant(data);
+      _showSnackBar("Planta criada com sucesso");
+      _navigateBackWithSuccess();
+    } catch (e) {
+      _showSnackBar('Erro ao cadastrar planta! $e');
+    }
+  }
+
+  Plant mountPayload(bool create) {
+    return Plant(
+      id: !create ? widget.plant?.id : null,
       name: _nameController.text,
       temperature: double.tryParse(_temperatureController.text) ?? 0,
       soilMoisture: double.tryParse(_soilMoistureController.text) ?? 0,
@@ -67,26 +84,20 @@ class _PlantFormPageState extends State<PlantFormPage> {
       waterPumpStatus: _waterPumpStatusController.text,
       relayStatus: _relayStatusController.text,
     );
+  }
+
+  void handleSubmit() async {
+    if (!_formKey.currentState!.validate()) {
+      return _showSnackBar("Formulário Inválido");
+    }
 
     if (widget.plant != null) {
-      // Atualização
-      final response = await plantViewModel.updatePlant(widget.plant!);
-      if (response != null) {
-        _showSnackBar("Planta atualizada com sucesso");
-        _navigateBackWithSuccess();
-      } else {
-        _showSnackBar('Erro ao atualizar planta!');
-      }
-    } else {
-      // Criação
-      final response = await plantViewModel.createPlant(updatedPlant);
-      if (response != null) {
-        _showSnackBar("Planta criada com sucesso");
-        _navigateBackWithSuccess();
-      } else {
-        _showSnackBar('Erro ao cadastrar planta!');
-      }
+      final plant = mountPayload(false);
+      return handleUpdate(plant);
     }
+
+    final plant = mountPayload(true);
+    handleCreate(plant);
   }
 
   @override

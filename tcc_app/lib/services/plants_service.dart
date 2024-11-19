@@ -23,4 +23,20 @@ class PlantService {
 
     return plants;
   }
+
+  Future<Plant?> updatePlant(int plantId, Plant data) async {
+    final response =
+        await apiService.put("/api/plants/$plantId/", data.toJson());
+
+    final parsedJson = jsonDecode(response!.body);
+    final plants = Plant.fromJson(parsedJson);
+
+    return plants;
+  }
+
+  Future<bool> deletePlant(int plantId) async {
+    final response = await apiService.delete("/api/plants/$plantId/");
+
+    return response?.statusCode == 204 ? true : false;
+  }
 }

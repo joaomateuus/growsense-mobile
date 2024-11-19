@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tcc_app/models/plant.dart';
 import 'package:tcc_app/viewmodel/home/home_viewmodel.dart';
 import 'package:tcc_app/screens/home/plants/form.dart';
+import 'package:tcc_app/viewmodel/home/plant.viewmodel.dart';
 
 class PlantsPage extends StatefulWidget {
   const PlantsPage({Key? key}) : super(key: key);
@@ -12,6 +13,7 @@ class PlantsPage extends StatefulWidget {
 
 class _PlantsPageState extends State<PlantsPage> {
   final homeViewModel = HomeViewModelImpl();
+  final plantViewModel = PlantViewModelImpl();
   List<Plant> plants = [];
   bool isLoading = true;
 
@@ -19,6 +21,22 @@ class _PlantsPageState extends State<PlantsPage> {
   void initState() {
     super.initState();
     loadPlants();
+  }
+
+  Future<void> navigateToCreatePlant() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const PlantFormPage()),
+    );
+
+    if (result == true) {
+      loadPlants();
+    }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> loadPlants() async {
@@ -36,18 +54,16 @@ class _PlantsPageState extends State<PlantsPage> {
     }
   }
 
-  Future<void> navigateToCreatePlant() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const PlantFormPage()),
-    );
+  void handleDelete(int plantId) async {
+    final result = await plantViewModel.deletePlant(plantId);
 
-    if (result == true) {
+    if (result) {
+      _showSnackBar("Planta deletada com sucesso!!");
       loadPlants();
+    } else {
+      _showSnackBar("Não foi possivel deletar");
     }
   }
-
-  void logout(BuildContext context) {}
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +96,8 @@ class _PlantsPageState extends State<PlantsPage> {
                           itemCount: plants.length,
                           itemBuilder: (context, index) {
                             final plant = plants[index];
-                            return PlantCard(plant: plant);
+                            return PlantCard(
+                                plant: plant, handleDelete: handleDelete);
                           },
                         ),
             ),
@@ -93,8 +110,10 @@ class _PlantsPageState extends State<PlantsPage> {
 
 class PlantCard extends StatelessWidget {
   final Plant plant;
+  final Function(int) handleDelete;
 
-  const PlantCard({Key? key, required this.plant}) : super(key: key);
+  const PlantCard({Key? key, required this.plant, required this.handleDelete})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -154,8 +173,8 @@ class PlantCard extends StatelessWidget {
                               ),
                               TextButton(
                                 onPressed: () {
-                                  // Insira a lógica para deletar aqui
-                                  Navigator.pop(context); // Fecha o diálogo
+                                  Navigator.pop(context);
+                                  handleDelete(plant.id!);
                                 },
                                 child: const Text('Delete'),
                               ),

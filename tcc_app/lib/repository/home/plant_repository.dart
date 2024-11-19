@@ -15,4 +15,16 @@ class PlantRespository {
 
     return response;
   }
+
+  Future<Plant?> updatePlant(int plantId, Plant data) async {
+    final response = await plantService.updatePlant(plantId, data);
+
+    return response;
+  }
+
+  Future<bool> deletePlant(int plantId) async {
+    final response = await plantService.deletePlant(plantId);
+
+    return response;
+  }
 }

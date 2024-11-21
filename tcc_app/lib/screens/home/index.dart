@@ -21,6 +21,13 @@ class HomePage extends StatelessWidget {
           children: [
             _buildNavigationCard(
               context,
+              title: 'Devices',
+              icon: Icons.device_hub,
+              color: Colors.blue,
+              route: '/devices',
+            ),
+            _buildNavigationCard(
+              context,
               title: 'Plantas',
               icon: Icons.nature,
               color: Colors.green,
@@ -32,13 +39,6 @@ class HomePage extends StatelessWidget {
               icon: Icons.agriculture,
               color: Colors.brown,
               route: '/cultivation',
-            ),
-            _buildNavigationCard(
-              context,
-              title: 'Devices',
-              icon: Icons.device_hub,
-              color: Colors.blue,
-              route: '/devices',
             ),
             _buildNavigationCard(
               context,

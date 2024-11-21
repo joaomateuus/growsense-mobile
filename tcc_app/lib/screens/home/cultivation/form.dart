@@ -4,6 +4,8 @@ import 'package:tcc_app/models/plant.dart';
 import 'package:tcc_app/models/user_session.dart';
 import 'package:tcc_app/viewmodel/home/cultivation_viewmodel.dart';
 import 'package:tcc_app/viewmodel/home/plant.viewmodel.dart';
+import 'package:tcc_app/viewmodel/home/device_viewmodel.dart';
+import 'package:tcc_app/models/device.dart';
 
 class CultivationFormPage extends StatefulWidget {
   final Cultivation? cultivation;
@@ -16,10 +18,13 @@ class CultivationFormPage extends StatefulWidget {
 
 class _CultivationFormPage extends State<CultivationFormPage> {
   final cultivationViewModel = CultivationViewModelImpl();
+  final plantViewModel = PlantViewModelImpl();
+  final deviceViewModel = DeviceViewModelImpl();
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
-  final plantViewModel = PlantViewModelImpl();
+
   Plant? _selectedPlant;
+  Device? _selectedDevice;
 
   @override
   void initState() {
@@ -48,7 +53,10 @@ class _CultivationFormPage extends State<CultivationFormPage> {
 
     UserSession? user = UserSession.getSession();
     Cultivation data = Cultivation(
-        name: _nameController.text, plant: _selectedPlant!, user: user!.user);
+        name: _nameController.text,
+        plant: _selectedPlant!,
+        user: user!.user,
+        device: _selectedDevice!);
 
     final response = await cultivationViewModel.createCultivation(data);
 
@@ -84,9 +92,8 @@ class _CultivationFormPage extends State<CultivationFormPage> {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
 
-              // Select de planta
+              const SizedBox(height: 16),
               FutureBuilder<List<Plant>>(
                 future: plantViewModel
                     .listPlants(), // Método que retorna a lista de plantas
@@ -94,18 +101,26 @@ class _CultivationFormPage extends State<CultivationFormPage> {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const CircularProgressIndicator();
                   } else if (snapshot.hasError) {
-                    return const Text('Error loading plants');
-                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Text('No plants available');
+                    _showSnackBar("Erro ao carregar plantas");
+                    // return const SizedBox.shrink();
                   }
+                  // else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  //   return const SizedBox.shrink();
+                  // }
 
-                  final plants = snapshot.data!;
+                  final plants = snapshot.data ?? [];
 
                   // Garante que o valor inicial de _selectedPlant é válido
-                  if (_selectedPlant == null ||
-                      !plants.contains(_selectedPlant)) {
+                  if (plants.isNotEmpty) {
+                    // Garante que o valor inicial de _selectedPlant é válido
+                    if (_selectedPlant == null ||
+                        !plants.contains(_selectedPlant)) {
+                      _selectedPlant = plants
+                          .first; // Inicializa com o primeiro item da lista
+                    }
+                  } else {
                     _selectedPlant =
-                        plants.first; // Inicializa com o primeiro item da lista
+                        null; // Define como null se a lista estiver vazia
                   }
 
                   return DropdownButtonFormField<Plant>(
@@ -118,13 +133,15 @@ class _CultivationFormPage extends State<CultivationFormPage> {
                         child: Text(plant.name), // Exibe o nome da planta
                       );
                     }).toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedPlant = value;
-                      });
-                    },
+                    onChanged: plants.isNotEmpty
+                        ? (value) {
+                            setState(() {
+                              _selectedPlant = value;
+                            });
+                          }
+                        : null, // Desabilita o campo se não houver plantas
                     validator: (value) {
-                      if (value == null) {
+                      if (value == null && plants.isNotEmpty) {
                         return 'Please select a plant';
                       }
                       return null;
@@ -133,9 +150,65 @@ class _CultivationFormPage extends State<CultivationFormPage> {
                 },
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
+              FutureBuilder<List<Device>>(
+                future: deviceViewModel
+                    .listDevices(), // Método que retorna a lista de plantas
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const CircularProgressIndicator();
+                  } else if (snapshot.hasError) {
+                    _showSnackBar("Erro ao carregar devices");
+                    // return const SizedBox.shrink();
+                  }
+                  // else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  //   return const SizedBox.shrink();
+                  // }
 
-              // Botão de envio
+                  final devices = snapshot.data ?? [];
+
+                  // Garante que o valor inicial de _selectedPlant é válido
+                  if (devices.isNotEmpty) {
+                    // Garante que o valor inicial de _selectedDevice é válido
+                    if (_selectedDevice == null ||
+                        !devices.contains(_selectedDevice)) {
+                      _selectedDevice = devices
+                          .first; // Inicializa com o primeiro item da lista
+                    }
+                  } else {
+                    _selectedDevice =
+                        null; // Define como null se a lista estiver vazia
+                  }
+
+                  return DropdownButtonFormField<Device>(
+                    value: _selectedDevice,
+                    decoration:
+                        const InputDecoration(labelText: 'Select Plant'),
+                    items: devices.map((device) {
+                      return DropdownMenuItem<Device>(
+                        value: device, // O valor é o objeto Device
+                        child: Text(device
+                            .serialNumber), // Exibe o serial do dispositivo
+                      );
+                    }).toList(),
+                    onChanged: devices.isNotEmpty
+                        ? (value) {
+                            setState(() {
+                              _selectedDevice = value;
+                            });
+                          }
+                        : null, // Desabilita o campo se não houver dispositivos
+                    validator: (value) {
+                      if (value == null && devices.isNotEmpty) {
+                        return 'Please select a device';
+                      }
+                      return null;
+                    },
+                  );
+                },
+              ),
+
+              const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: handleSubmit,
                 child: const Text('Submit'),

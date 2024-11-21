@@ -107,7 +107,7 @@ class DeviceCard extends StatelessWidget {
                         fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
-                  Text('Cultivo: ${device.cultivation.name}'),
+                  // Text('Cultivo: ${device.cultivation.name}'),
                 ],
               ),
             ),

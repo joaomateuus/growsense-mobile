@@ -15,7 +15,7 @@ class DeviceService {
   }
 
   Future<Device?> createDevice(Device data) async {
-    final response = await apiService.post("/api/device/", data.toJson(true));
+    final response = await apiService.post("/api/device/", data.toJson());
 
     final parsedJson = jsonDecode(response!.body);
     final device = Device.fromJson(parsedJson);

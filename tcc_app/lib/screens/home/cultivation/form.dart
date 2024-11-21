@@ -102,11 +102,7 @@ class _CultivationFormPage extends State<CultivationFormPage> {
                     return const CircularProgressIndicator();
                   } else if (snapshot.hasError) {
                     _showSnackBar("Erro ao carregar plantas");
-                    // return const SizedBox.shrink();
                   }
-                  // else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  //   return const SizedBox.shrink();
-                  // }
 
                   final plants = snapshot.data ?? [];
 
@@ -159,11 +155,7 @@ class _CultivationFormPage extends State<CultivationFormPage> {
                     return const CircularProgressIndicator();
                   } else if (snapshot.hasError) {
                     _showSnackBar("Erro ao carregar devices");
-                    // return const SizedBox.shrink();
                   }
-                  // else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  //   return const SizedBox.shrink();
-                  // }
 
                   final devices = snapshot.data ?? [];
 

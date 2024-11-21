@@ -112,6 +112,20 @@ class CultivationCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
+              icon: const Icon(Icons.nature, color: Colors.green),
+              onPressed: () {
+                // Redireciona para a tela de edição
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CultivationFormPage(
+                      cultivation: cultivation, // Passe o objeto aqui
+                    ),
+                  ),
+                );
+              },
+            ),
+            IconButton(
               icon: const Icon(Icons.edit, color: Colors.blue),
               onPressed: () {
                 // Redireciona para a tela de edição
@@ -161,7 +175,19 @@ class CultivationCard extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment
+                  .start, // Centraliza o conteúdo horizontalmente
               children: [
+                // Título centralizado
+                const Text(
+                  'Parâmetros de Cultivo',
+                  style: TextStyle(
+                    fontSize: 15, // Tamanho da fonte do título
+                    fontWeight: FontWeight.bold, // Negrito
+                  ),
+                ),
+                const SizedBox(
+                    height: 20), // Espaçamento entre o título e os dados
                 _buildInfoRow('Usuário ID', cultivation.user.username),
                 _buildInfoRow(
                     'Temperatura', '${cultivation.plant.temperature}°C'),

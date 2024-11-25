@@ -3,13 +3,6 @@ import 'package:tcc_app/models/user.dart';
 import 'package:tcc_app/models/user_session.dart';
 import 'package:tcc_app/services/api_service.dart';
 
-class BaseService<T> {
-  T? data;
-  Map<String, dynamic>? errors;
-
-  BaseService({this.data, this.errors});
-}
-
 class UserService {
   final ApiService apiService = ApiService();
 

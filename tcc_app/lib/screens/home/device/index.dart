@@ -49,10 +49,16 @@ class _DevicePageState extends State<DevicePage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('Listagem de Dispositivos'),
+        title: Text(
+          'Seus Dispositivos 📶',
+          style: TextStyle(fontSize: screenWidth * 0.05),
+        ),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
@@ -62,16 +68,48 @@ class _DevicePageState extends State<DevicePage> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(screenWidth * 0.04),
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : devices.isEmpty
-                ? const Center(child: Text('Nenhum Device encontrado.'))
-                : ListView.builder(
-                    itemCount: devices.length,
-                    itemBuilder: (context, index) {
-                      final device = devices[index];
-                      return DeviceCard(device: device);
+                ? Center(
+                    child: Text(
+                      'Nenhum Device encontrado.',
+                      style: TextStyle(
+                        fontSize: screenWidth * 0.045,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  )
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      if (screenWidth > 600) {
+                        // Layout para telas maiores
+                        return GridView.builder(
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: screenWidth * 0.04,
+                            mainAxisSpacing: screenHeight * 0.02,
+                            childAspectRatio: 1.5,
+                          ),
+                          itemCount: devices.length,
+                          itemBuilder: (context, index) {
+                            final device = devices[index];
+                            return DeviceCard(device: device);
+                          },
+                        );
+                      } else {
+                        // Layout para telas menores
+                        return ListView.builder(
+                          itemCount: devices.length,
+                          itemBuilder: (context, index) {
+                            final device = devices[index];
+                            return DeviceCard(device: device);
+                          },
+                        );
+                      }
                     },
                   ),
       ),
@@ -86,51 +124,57 @@ class DeviceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
+      margin: EdgeInsets.symmetric(vertical: screenWidth * 0.02),
       elevation: 4,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    device.serialNumber,
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  // Text('Cultivo: ${device.cultivation.name}'),
-                ],
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: screenWidth * 0.25,
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(screenWidth * 0.04),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.device_hub_rounded,
+                size: 30,
               ),
-            ),
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.blue),
-                  onPressed: () {
-                    // Redireciona para a tela de edição do device
+              SizedBox(width: screenWidth * 0.04),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Text(
+                      device.serialNumber,
+                      style: TextStyle(
+                        fontSize: screenWidth * 0.045,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuButton<String>(
+                icon: const Icon(Icons.more_vert),
+                onSelected: (value) {
+                  if (value == 'edit') {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => DeviceFormPage(
-                          device: device, // Passe o objeto aqui
+                          device: device,
                         ),
                       ),
                     );
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () {
-                    // Mostra um diálogo de confirmação antes de deletar
+                  } else if (value == 'delete') {
                     showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
@@ -140,25 +184,41 @@ class DeviceCard extends StatelessWidget {
                         actions: [
                           TextButton(
                             onPressed: () {
-                              Navigator.pop(context); // Fecha o diálogo
+                              Navigator.pop(context);
                             },
                             child: const Text('Cancel'),
                           ),
                           TextButton(
                             onPressed: () {
+                              Navigator.pop(context);
                               // Lógica para deletar o device
-                              Navigator.pop(context); // Fecha o diálogo
                             },
                             child: const Text('Delete'),
                           ),
                         ],
                       ),
                     );
-                  },
-                ),
-              ],
-            ),
-          ],
+                  }
+                },
+                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                  const PopupMenuItem<String>(
+                    value: 'edit',
+                    child: ListTile(
+                      leading: Icon(Icons.edit, color: Colors.blue),
+                      title: Text('Editar'),
+                    ),
+                  ),
+                  const PopupMenuItem<String>(
+                    value: 'delete',
+                    child: ListTile(
+                      leading: Icon(Icons.delete, color: Colors.red),
+                      title: Text('Excluir'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

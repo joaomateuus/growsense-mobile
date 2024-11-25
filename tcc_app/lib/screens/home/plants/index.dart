@@ -23,10 +23,10 @@ class _PlantsPageState extends State<PlantsPage> {
     loadPlants();
   }
 
-  Future<void> navigateToCreatePlant() async {
+  Future<void> navigateToCreatePlant(Plant? plant) async {
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const PlantFormPage()),
+      MaterialPageRoute(builder: (context) => PlantFormPage(plant: plant)),
     );
 
     if (result == true) {
@@ -67,43 +67,45 @@ class _PlantsPageState extends State<PlantsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('Listagem de Plantas'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'Suas Plantas 🌱',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              navigateToCreatePlant();
-            },
+            icon: const Icon(Icons.add, color: Colors.green),
+            onPressed: () => navigateToCreatePlant(null),
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 16),
-            Expanded(
-              child: isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : plants.isEmpty
-                      ? const Center(child: Text('Nenhuma planta encontrada.'))
-                      : ListView.builder(
-                          itemCount: plants.length,
-                          itemBuilder: (context, index) {
-                            final plant = plants[index];
-                            return PlantCard(
-                                plant: plant, handleDelete: handleDelete);
-                          },
-                        ),
-            ),
-          ],
-        ),
-      ),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : plants.isEmpty
+              ? const Center(child: Text('Não há plantas cadastradas'))
+              : Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: screenWidth * 0.05,
+                    vertical: 16.0,
+                  ),
+                  child: ListView.builder(
+                    itemCount: plants.length,
+                    itemBuilder: (context, index) {
+                      final plant = plants[index];
+                      return PlantCard(
+                        plant: plant,
+                        handleDelete: handleDelete,
+                        navigateToCreatePlant: navigateToCreatePlant,
+                      );
+                    },
+                  ),
+                ),
     );
   }
 }
@@ -111,107 +113,136 @@ class _PlantsPageState extends State<PlantsPage> {
 class PlantCard extends StatelessWidget {
   final Plant plant;
   final Function(int) handleDelete;
+  final Function(Plant?) navigateToCreatePlant;
 
-  const PlantCard({Key? key, required this.plant, required this.handleDelete})
-      : super(key: key);
+  const PlantCard({
+    Key? key,
+    required this.plant,
+    required this.handleDelete,
+    required this.navigateToCreatePlant,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Card(
       elevation: 5,
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
       ),
+      margin: const EdgeInsets.symmetric(vertical: 8),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(screenWidth * 0.03),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  plant.name,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.network(
+                    'https://static.vecteezy.com/system/resources/thumbnails/023/742/329/small_2x/banana-plant-in-flowerpot-illustration-ai-generative-free-png.png',
+                    height: 50,
+                    width: 50,
+                    fit: BoxFit.cover,
                   ),
                 ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.blue),
-                      onPressed: () {
-                        // Redireciona para a tela de edição
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PlantFormPage(
-                              plant: plant, // Passe o objeto aqui
-                            ),
-                          ),
-                        );
-                      },
+                SizedBox(width: screenWidth * 0.04),
+                Expanded(
+                  child: Text(
+                    plant.name,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () {
-                        // Mostra um diálogo de confirmação antes de deletar
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text('Confirm Deletion'),
-                            content: const Text(
-                                'Are you sure you want to delete this plant?'),
-                            actions: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context); // Fecha o diálogo
-                                },
-                                child: const Text('Cancel'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(context);
-                                  handleDelete(plant.id!);
-                                },
-                                child: const Text('Delete'),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                  ),
+                ),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_vert),
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      navigateToCreatePlant(plant);
+                    } else if (value == 'delete') {
+                      _showDeleteConfirmationDialog(context);
+                    }
+                  },
+                  itemBuilder: (BuildContext context) =>
+                      <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: 'edit',
+                      child: ListTile(
+                        leading: Icon(Icons.edit, color: Colors.blue),
+                        title: Text('Editar'),
+                      ),
+                    ),
+                    const PopupMenuItem<String>(
+                      value: 'delete',
+                      child: ListTile(
+                        leading: Icon(Icons.delete, color: Colors.red),
+                        title: Text('Excluir'),
+                      ),
                     ),
                   ],
                 ),
               ],
             ),
-            // ClipRRect(
-            //   borderRadius: BorderRadius.circular(10),
-            //   child: Image.asset(
-            //     'assets/images/laranja.png',
-            //     height: 150,
-            //     width: double.infinity,
-            //     fit: BoxFit.cover,
-            //   ),
-            // ),
             const SizedBox(height: 8),
-            Text('Temperature: ${plant.temperature}°C'),
-            Text('Soil Moisture: ${plant.soilMoisture}%'),
-            Text('Air Humidity: ${plant.airHumidity}%'),
-            Text('Light Intensity: ${plant.lightIntensity} lx'),
-            Text('Rain Sensor: ${plant.rainSensor}'),
-            Text('Water Pump: ${plant.waterPumpStatus}'),
-            Text('Relay Status: ${plant.relayStatus}'),
-            const SizedBox(height: 8),
-            Text(
-              'Last Updated: ${plant.lastUpdated}',
-              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            Wrap(
+              spacing: 16,
+              runSpacing: 8,
+              children: [
+                _buildInfoRow(
+                    Icons.thermostat, '${plant.temperature}°C', Colors.blue),
+                _buildInfoRow(
+                    Icons.water_drop, '${plant.soilMoisture}%', Colors.green),
+                _buildInfoRow(
+                    Icons.wb_sunny, '${plant.lightIntensity} lx', Colors.amber),
+                _buildInfoRow(
+                    Icons.cloud, '${plant.airHumidity}%', Colors.grey),
+              ],
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String text, Color iconColor) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 16, color: iconColor),
+        const SizedBox(width: 4),
+        Text(text),
+      ],
+    );
+  }
+
+  void _showDeleteConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Deletion'),
+          content: const Text('Are you sure you want to delete this plant?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                handleDelete(plant.id!);
+              },
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -1,9 +1,7 @@
-// lib/pages/cultivation_page.dart
 import 'package:flutter/material.dart';
 import 'package:tcc_app/models/cultivation.dart';
 import 'package:tcc_app/screens/home/cultivation/form.dart';
-// import 'package:tcc_app/models/plant.dart';
-// import 'package:tcc_app/models/user.dart';
+import 'package:tcc_app/screens/home/device_data/index.dart';
 import 'package:tcc_app/viewmodel/home/cultivation_viewmodel.dart';
 
 class CultivationPage extends StatefulWidget {
@@ -18,6 +16,17 @@ class _CultivationPageState extends State<CultivationPage> {
   List<Cultivation> cultivations = [];
   bool isLoading = true;
 
+  @override
+  void initState() {
+    super.initState();
+    loadCultivations();
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
   Future<void> loadCultivations() async {
     try {
       final loadedCultivations = await cultivationViewModel.listCultivations();
@@ -29,7 +38,30 @@ class _CultivationPageState extends State<CultivationPage> {
       setState(() {
         isLoading = false;
       });
-      print('Erro ao carregar plantas: $e');
+      print('Erro ao carregar cultivos: $e');
+    }
+  }
+
+  Future<void> deleteCultivation(int cultivationId) async {
+    setState(() {
+      isLoading = true; // Mostra um indicador de carregamento
+    });
+
+    try {
+      final result =
+          await cultivationViewModel.deleteCultivation(cultivationId);
+      if (result) {
+        _showSnackBar('Cultivo excluído com sucesso!');
+        await loadCultivations(); // Recarrega a lista após exclusão
+      } else {
+        _showSnackBar('Erro ao excluir cultivo.');
+      }
+    } catch (e) {
+      _showSnackBar('Erro ao excluir cultivo: $e');
+    } finally {
+      setState(() {
+        isLoading = false; // Remove o indicador de carregamento
+      });
     }
   }
 
@@ -45,21 +77,13 @@ class _CultivationPageState extends State<CultivationPage> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    loadCultivations();
-  }
-
-  void logout(BuildContext context) {
-    // Implementar lógica de logout se necessário
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('Listagem de Cultivos'),
+        title: const Text('Seus Cultivos 🌳'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           IconButton(
@@ -71,7 +95,7 @@ class _CultivationPageState extends State<CultivationPage> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(screenWidth * 0.05),
         child: isLoading
             ? const Center(child: CircularProgressIndicator())
             : cultivations.isEmpty
@@ -80,7 +104,12 @@ class _CultivationPageState extends State<CultivationPage> {
                     itemCount: cultivations.length,
                     itemBuilder: (context, index) {
                       final cultivation = cultivations[index];
-                      return CultivationCard(cultivation: cultivation);
+                      return CultivationCard(
+                        cultivation: cultivation,
+                        reloadCultivations: loadCultivations,
+                        onDelete: () => deleteCultivation(
+                            cultivation.id!), // Passa o ID para exclusão
+                      );
                     },
                   ),
       ),
@@ -90,128 +119,133 @@ class _CultivationPageState extends State<CultivationPage> {
 
 class CultivationCard extends StatelessWidget {
   final Cultivation cultivation;
+  final VoidCallback reloadCultivations;
+  final VoidCallback onDelete;
 
-  const CultivationCard({Key? key, required this.cultivation})
-      : super(key: key);
+  const CultivationCard({
+    Key? key,
+    required this.cultivation,
+    required this.reloadCultivations,
+    required this.onDelete,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      elevation: 4,
+      elevation: 5,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(15),
       ),
-      child: ExpansionTile(
-        title: Text(
-          cultivation.name,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text('Plant: ${cultivation.plant.name}'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.nature, color: Colors.green),
-              onPressed: () {
-                // Redireciona para a tela de edição
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CultivationFormPage(
-                      cultivation: cultivation, // Passe o objeto aqui
+      margin: EdgeInsets.symmetric(vertical: screenWidth * 0.02),
+      child: InkWell(
+        onTap: () {
+          // Redireciona para a página de dados do cultivo
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PlantDataPage(
+                  cultivationId: cultivation.id!), // Página de dados
+            ),
+          );
+        },
+        child: Padding(
+          padding: EdgeInsets.all(screenWidth * 0.04),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          cultivation.name,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          'Planta: ${cultivation.plant.name}',
+                          style: const TextStyle(fontSize: 15),
+                        ),
+                        const SizedBox(height: 20)
+                      ],
                     ),
                   ),
-                );
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.edit, color: Colors.blue),
-              onPressed: () {
-                // Redireciona para a tela de edição
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => CultivationFormPage(
-                      cultivation: cultivation, // Passe o objeto aqui
-                    ),
-                  ),
-                );
-              },
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () {
-                // Mostra um diálogo de confirmação antes de deletar
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: const Text('Confirm Deletion'),
-                    content: const Text(
-                        'Are you sure you want to delete this cultivation?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(context); // Fecha o diálogo
-                        },
-                        child: const Text('Cancel'),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert),
+                    onSelected: (value) {
+                      if (value == 'edit') {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CultivationFormPage(
+                              cultivation: cultivation,
+                            ),
+                          ),
+                        ).then((_) => reloadCultivations());
+                      } else if (value == 'delete') {
+                        _showDeleteConfirmationDialog(context);
+                      }
+                    },
+                    itemBuilder: (BuildContext context) =>
+                        <PopupMenuEntry<String>>[
+                      const PopupMenuItem<String>(
+                        value: 'edit',
+                        child: ListTile(
+                          leading: Icon(Icons.edit, color: Colors.blue),
+                          title: Text('Editar Cultivo'),
+                        ),
                       ),
-                      TextButton(
-                        onPressed: () {
-                          // Insira a lógica para deletar aqui
-                          Navigator.pop(context); // Fecha o diálogo
-                        },
-                        child: const Text('Delete'),
+                      const PopupMenuItem<String>(
+                        value: 'delete',
+                        child: ListTile(
+                          leading: Icon(Icons.delete, color: Colors.red),
+                          title: Text('Excluir Cultivo'),
+                        ),
                       ),
                     ],
                   ),
-                );
-              },
-            ),
-            const Icon(Icons.keyboard_arrow_down), // Seta de expansão
-          ],
-        ),
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment
-                  .start, // Centraliza o conteúdo horizontalmente
-              children: [
-                // Título centralizado
-                const Text(
-                  'Parâmetros de Cultivo',
-                  style: TextStyle(
-                    fontSize: 15, // Tamanho da fonte do título
-                    fontWeight: FontWeight.bold, // Negrito
+                ],
+              ),
+              ExpansionTile(
+                title: const Center(
+                  child: Text(
+                    'Parâmetros de Cultivo',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
-                const SizedBox(
-                    height: 20), // Espaçamento entre o título e os dados
-                _buildInfoRow('Usuário ID', cultivation.user.username),
-                _buildInfoRow(
-                    'Temperatura', '${cultivation.plant.temperature}°C'),
-                _buildInfoRow(
-                    'Umidade do Solo', '${cultivation.plant.soilMoisture}%'),
-                _buildInfoRow(
-                    'Umidade do Ar', '${cultivation.plant.airHumidity}%'),
-                _buildInfoRow('Intensidade de Luz',
-                    '${cultivation.plant.lightIntensity} lx'),
-                _buildInfoRow(
-                    'Sensor de Chuva', cultivation.plant.rainSensor.toString()),
-                _buildInfoRow('Status da Bomba de Água',
-                    cultivation.plant.waterPumpStatus ?? 'N/A'),
-                _buildInfoRow(
-                    'Status do Relé', cultivation.plant.relayStatus ?? 'N/A'),
-                _buildInfoRow(
+                children: [
+                  _buildInfoRow(
+                      'Temperatura', '${cultivation.plant.temperature}°C'),
+                  _buildInfoRow(
+                      'Umidade do Solo', '${cultivation.plant.soilMoisture}%'),
+                  _buildInfoRow(
+                      'Umidade do Ar', '${cultivation.plant.airHumidity}%'),
+                  _buildInfoRow('Intensidade de Luz',
+                      '${cultivation.plant.lightIntensity} lx'),
+                  _buildInfoRow('Sensor de Chuva',
+                      cultivation.plant.rainSensor.toString()),
+                  _buildInfoRow('Status da Bomba de Água',
+                      cultivation.plant.waterPumpStatus ?? 'N/A'),
+                  _buildInfoRow(
+                      'Status do Relé', cultivation.plant.relayStatus ?? 'N/A'),
+                  _buildInfoRow(
                     'Última Atualização',
                     cultivation.plant.lastUpdated != null
                         ? cultivation.plant.lastUpdated!.toLocal().toString()
-                        : 'N/A'),
-              ],
-            ),
+                        : 'N/A',
+                  ),
+                  const SizedBox(height: 8),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -222,12 +256,45 @@ class CultivationCard extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-              flex: 3,
-              child: Text('$label: ',
-                  style: const TextStyle(fontWeight: FontWeight.bold))),
-          Expanded(flex: 5, child: Text(value)),
+            flex: 3,
+            child: Text(
+              '$label:',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+          Expanded(
+            flex: 5,
+            child: Text(value),
+          ),
         ],
       ),
+    );
+  }
+
+  void _showDeleteConfirmationDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Confirmar Exclusão'),
+          content: const Text('Tem certeza que deseja excluir este cultivo?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancelar'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                onDelete();
+              },
+              child: const Text('Excluir'),
+            ),
+          ],
+        );
+      },
     );
   }
 }

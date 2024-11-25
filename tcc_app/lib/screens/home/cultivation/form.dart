@@ -29,7 +29,6 @@ class _CultivationFormPage extends State<CultivationFormPage> {
   @override
   void initState() {
     super.initState();
-    // Preencher os campos se estiver editando
     if (widget.cultivation != null) {
       _nameController.text = widget.cultivation!.name;
       _selectedPlant = widget.cultivation!.plant;
@@ -45,88 +44,109 @@ class _CultivationFormPage extends State<CultivationFormPage> {
         .showSnackBar(SnackBar(content: Text(message)));
   }
 
-  void handleSubmit() async {
-    if (!_formKey.currentState!.validate()) {
-      print('Formulário inválido');
-      return;
-    }
-
-    UserSession? user = UserSession.getSession();
-    Cultivation data = Cultivation(
-        name: _nameController.text,
-        plant: _selectedPlant!,
-        user: user!.user,
-        device: _selectedDevice!);
-
-    final response = await cultivationViewModel.createCultivation(data);
-
-    if (response != null) {
+  void handleCreate(Cultivation data) async {
+    try {
+      await cultivationViewModel.createCultivation(data);
       _showSnackBar("Cultivo cadastrado com sucesso!!");
       _navigateBackWithSuccess();
-    } else {
+    } catch (e) {
       _showSnackBar("Erro ao cadastrar Cultivo");
     }
   }
 
+  void handleUpdate(int cultivationId, Cultivation data) async {
+    try {
+      await cultivationViewModel.updateCultivation(cultivationId, data);
+      _showSnackBar("Cultivo editado com sucesso!!");
+      _navigateBackWithSuccess();
+    } catch (e) {
+      _showSnackBar("Erro ao editar Cultivo");
+    }
+  }
+
+  Cultivation mountPayload(bool create) {
+    UserSession? user = UserSession.getSession();
+    return Cultivation(
+      id: !create ? widget.cultivation?.id : null,
+      name: _nameController.text,
+      plant: _selectedPlant!,
+      user: user!.user,
+      device: _selectedDevice!,
+    );
+  }
+
+  void handleSubmit() async {
+    if (!_formKey.currentState!.validate()) {
+      _showSnackBar('Formulário inválido');
+      return;
+    }
+
+    if (widget.cultivation != null) {
+      final data = mountPayload(false);
+
+      return handleUpdate(data.id!, data);
+    }
+
+    final data = mountPayload(true);
+    handleCreate(data);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final horizontalPadding = screenWidth * 0.08; // Mais espaçamento
+
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('Cultivation Form'),
+        title: Text(
+            widget.cultivation == null ? 'Criar Cultivo' : 'Editar Cultivo'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
         child: Form(
           key: _formKey,
-          child: Column(
+          child: ListView(
             children: [
-              // Nome input
               TextFormField(
                 controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Nome do Cultivo'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Please enter a name';
+                    return 'Por favor, insira um nome';
                   }
                   return null;
                 },
               ),
-
               const SizedBox(height: 16),
               FutureBuilder<List<Plant>>(
-                future: plantViewModel
-                    .listPlants(), // Método que retorna a lista de plantas
+                future: plantViewModel.listPlants(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const CircularProgressIndicator();
+                    return const Center(child: CircularProgressIndicator());
                   } else if (snapshot.hasError) {
                     _showSnackBar("Erro ao carregar plantas");
                   }
 
                   final plants = snapshot.data ?? [];
 
-                  // Garante que o valor inicial de _selectedPlant é válido
                   if (plants.isNotEmpty) {
-                    // Garante que o valor inicial de _selectedPlant é válido
                     if (_selectedPlant == null ||
                         !plants.contains(_selectedPlant)) {
-                      _selectedPlant = plants
-                          .first; // Inicializa com o primeiro item da lista
+                      _selectedPlant = plants.first;
                     }
                   } else {
-                    _selectedPlant =
-                        null; // Define como null se a lista estiver vazia
+                    _selectedPlant = null;
                   }
 
                   return DropdownButtonFormField<Plant>(
                     value: _selectedPlant,
                     decoration:
-                        const InputDecoration(labelText: 'Select Plant'),
+                        const InputDecoration(labelText: 'Selecione a Planta'),
                     items: plants.map((plant) {
                       return DropdownMenuItem<Plant>(
-                        value: plant, // O valor é o objeto Plant
-                        child: Text(plant.name), // Exibe o nome da planta
+                        value: plant,
+                        child: Text(plant.name),
                       );
                     }).toList(),
                     onChanged: plants.isNotEmpty
@@ -135,52 +155,45 @@ class _CultivationFormPage extends State<CultivationFormPage> {
                               _selectedPlant = value;
                             });
                           }
-                        : null, // Desabilita o campo se não houver plantas
+                        : null,
                     validator: (value) {
                       if (value == null && plants.isNotEmpty) {
-                        return 'Please select a plant';
+                        return 'Por favor, selecione uma planta';
                       }
                       return null;
                     },
                   );
                 },
               ),
-
-              const SizedBox(height: 16),
+              const SizedBox(height: 24), // Mais espaçamento entre elementos
               FutureBuilder<List<Device>>(
-                future: deviceViewModel
-                    .listDevices(), // Método que retorna a lista de plantas
+                future: deviceViewModel.listDevices(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const CircularProgressIndicator();
+                    return const Center(child: CircularProgressIndicator());
                   } else if (snapshot.hasError) {
-                    _showSnackBar("Erro ao carregar devices");
+                    _showSnackBar("Erro ao carregar dispositivos");
                   }
 
                   final devices = snapshot.data ?? [];
 
-                  // Garante que o valor inicial de _selectedPlant é válido
                   if (devices.isNotEmpty) {
-                    // Garante que o valor inicial de _selectedDevice é válido
                     if (_selectedDevice == null ||
                         !devices.contains(_selectedDevice)) {
-                      _selectedDevice = devices
-                          .first; // Inicializa com o primeiro item da lista
+                      _selectedDevice = devices.first;
                     }
                   } else {
-                    _selectedDevice =
-                        null; // Define como null se a lista estiver vazia
+                    _selectedDevice = null;
                   }
 
                   return DropdownButtonFormField<Device>(
                     value: _selectedDevice,
-                    decoration:
-                        const InputDecoration(labelText: 'Select Plant'),
+                    decoration: const InputDecoration(
+                        labelText: 'Selecione o Dispositivo'),
                     items: devices.map((device) {
                       return DropdownMenuItem<Device>(
-                        value: device, // O valor é o objeto Device
-                        child: Text(device
-                            .serialNumber), // Exibe o serial do dispositivo
+                        value: device,
+                        child: Text(device.serialNumber),
                       );
                     }).toList(),
                     onChanged: devices.isNotEmpty
@@ -189,21 +202,23 @@ class _CultivationFormPage extends State<CultivationFormPage> {
                               _selectedDevice = value;
                             });
                           }
-                        : null, // Desabilita o campo se não houver dispositivos
+                        : null,
                     validator: (value) {
                       if (value == null && devices.isNotEmpty) {
-                        return 'Please select a device';
+                        return 'Por favor, selecione um dispositivo';
                       }
                       return null;
                     },
                   );
                 },
               ),
-
               const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: handleSubmit,
-                child: const Text('Submit'),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: handleSubmit,
+                  child: const Text('Enviar'),
+                ),
               ),
             ],
           ),

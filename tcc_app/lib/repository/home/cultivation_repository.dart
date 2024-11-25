@@ -15,4 +15,16 @@ class CultivationRepository {
 
     return response;
   }
+
+  Future<Cultivation?> updateCultivation(
+      int cultivationId, Cultivation data) async {
+    final response =
+        await cultivationService.updateCultivation(cultivationId, data);
+    return response;
+  }
+
+  Future<bool> deleteCultivation(int cultivationId) async {
+    final response = await cultivationService.deleteCultivation(cultivationId);
+    return response;
+  }
 }

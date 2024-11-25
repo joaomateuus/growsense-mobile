@@ -17,6 +17,11 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
+  }
+
   void login(BuildContext context, String username, String password) async {
     loginViewmodel.username = username;
     loginViewmodel.password = password;
@@ -26,7 +31,7 @@ class _LoginPageState extends State<LoginPage> {
     if (response) {
       Navigator.pushNamed(context, '/home');
     } else {
-      print("Não foi possível fazer o login");
+      _showSnackBar("Não foi possível fazer o login");
     }
   }
 

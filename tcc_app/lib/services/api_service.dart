@@ -33,12 +33,19 @@ class ApiService {
     }
   }
 
-  Future<http.Response?> get(String endpoint) async {
+  Future<http.Response?> get(String endpoint,
+      {Map<String, String>? queryParameters}) async {
     try {
       final token = UserSession.getSession()?.access;
 
+      // Construir a URI condicionalmente com os query parameters se fornecidos
+      final uri = queryParameters != null
+          ? Uri.parse('$baseUrl$endpoint')
+              .replace(queryParameters: queryParameters)
+          : Uri.parse('$baseUrl$endpoint');
+
       final response = await http.get(
-        Uri.parse('$baseUrl$endpoint'),
+        uri,
         headers: {
           'Content-Type': 'application/json; charset=UTF-8',
           if (token != null) 'Authorization': 'Bearer $token',

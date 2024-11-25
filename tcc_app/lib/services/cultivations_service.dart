@@ -22,4 +22,22 @@ class CultivationService {
 
     return cultivation;
   }
+
+  Future<Cultivation?> updateCultivation(
+      int cultivationId, Cultivation data) async {
+    final response = await apiService.put(
+        "/api/cultivations/$cultivationId/", data.toJson());
+
+    final parsedJson = jsonDecode(response!.body);
+    final cultivation = Cultivation.fromJson(parsedJson);
+
+    return cultivation;
+  }
+
+  Future<bool> deleteCultivation(int cultivationId) async {
+    final response =
+        await apiService.delete("/api/cultivations/$cultivationId/");
+
+    return response?.statusCode == 204 ? true : false;
+  }
 }

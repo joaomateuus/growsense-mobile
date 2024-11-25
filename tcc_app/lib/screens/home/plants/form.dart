@@ -29,7 +29,6 @@ class _PlantFormPageState extends State<PlantFormPage> {
   @override
   void initState() {
     super.initState();
-    // Preenche os controladores caso seja edição
     if (widget.plant != null) {
       _nameController.text = widget.plant!.name;
       _temperatureController.text = widget.plant!.temperature.toString();
@@ -102,80 +101,85 @@ class _PlantFormPageState extends State<PlantFormPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final paddingHorizontal = screenWidth * 0.05;
+
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
         title: Text(widget.plant == null ? 'Criar Planta' : 'Editar Planta'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.symmetric(horizontal: paddingHorizontal),
         child: Form(
           key: _formKey,
           child: ListView(
             children: [
-              TextFormField(
+              _buildResponsiveField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Name'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a name';
-                  }
-                  return null;
-                },
+                label: 'Name',
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter a name'
+                    : null,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              _buildResponsiveField(
                 controller: _temperatureController,
-                decoration:
-                    const InputDecoration(labelText: 'Temperature (°C)'),
+                label: 'Temperature (°C)',
                 keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              _buildResponsiveField(
                 controller: _soilMoistureController,
-                decoration:
-                    const InputDecoration(labelText: 'Soil Moisture (%)'),
+                label: 'Soil Moisture (%)',
                 keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              _buildResponsiveField(
                 controller: _airHumidityController,
-                decoration:
-                    const InputDecoration(labelText: 'Air Humidity (%)'),
+                label: 'Air Humidity (%)',
                 keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              _buildResponsiveField(
                 controller: _lightIntensityController,
-                decoration:
-                    const InputDecoration(labelText: 'Light Intensity (lx)'),
+                label: 'Light Intensity (lx)',
                 keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              _buildResponsiveField(
                 controller: _rainSensorController,
-                decoration: const InputDecoration(labelText: 'Rain Sensor'),
+                label: 'Rain Sensor',
                 keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              _buildResponsiveField(
                 controller: _waterPumpStatusController,
-                decoration:
-                    const InputDecoration(labelText: 'Water Pump Status'),
+                label: 'Water Pump Status',
               ),
-              const SizedBox(height: 16),
-              TextFormField(
+              _buildResponsiveField(
                 controller: _relayStatusController,
-                decoration: const InputDecoration(labelText: 'Relay Status'),
+                label: 'Relay Status',
               ),
               const SizedBox(height: 32),
               ElevatedButton(
                 onPressed: handleSubmit,
-                child: Text(widget.plant == null ? 'Criar' : 'Atualizar'),
+                child: const Text('Enviar'),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildResponsiveField({
+    required TextEditingController controller,
+    required String label,
+    TextInputType? keyboardType,
+    String? Function(String?)? validator,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: controller,
+        decoration: InputDecoration(labelText: label),
+        keyboardType: keyboardType,
+        validator: validator,
       ),
     );
   }

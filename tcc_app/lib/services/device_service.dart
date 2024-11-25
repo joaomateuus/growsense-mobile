@@ -1,5 +1,6 @@
 import 'package:tcc_app/services/api_service.dart';
 import 'package:tcc_app/models/device.dart';
+import 'package:tcc_app/models/device_data.dart';
 import 'dart:convert';
 
 class DeviceService {
@@ -21,5 +22,15 @@ class DeviceService {
     final device = Device.fromJson(parsedJson);
 
     return device;
+  }
+
+  Future<DeviceData> getDeviceData(int cultivationId) async {
+    final response = await apiService.get("/api/device/data/by_cultivation/",
+        queryParameters: {"cultivation_id": cultivationId.toString()});
+
+    final parsedJson = jsonDecode(response!.body);
+    final deviceData = DeviceData.fromJson(parsedJson);
+
+    return deviceData;
   }
 }

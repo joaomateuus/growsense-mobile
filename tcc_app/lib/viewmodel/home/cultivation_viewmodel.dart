@@ -17,4 +17,18 @@ class CultivationViewModelImpl {
 
     return response;
   }
+
+  Future<Cultivation?> updateCultivation(
+      int cultivationId, Cultivation data) async {
+    final response =
+        await cultivationRepostory.updateCultivation(cultivationId, data);
+
+    return response;
+  }
+
+  Future<bool> deleteCultivation(int cultivationId) async {
+    final response =
+        await cultivationRepostory.deleteCultivation(cultivationId);
+    return response;
+  }
 }
